@@ -13,14 +13,12 @@ with st.sidebar:
     archivo = st.file_uploader("Subí el reporte acumulado (XLS o CSV)", type=['xlsx', 'csv'])
 
 if archivo:
-    # 1. Leer datos
+    # Leer datos
     df = pd.read_excel(archivo) if archivo.name.endswith('.xlsx') else pd.read_csv(archivo)
     df.columns = df.columns.str.strip() # Limpiar nombres de columnas
     
-    # 2. FILTRO DE PAÍSES (Excluimos Ecuador)
-    # Usamos una lista blanca para mayor seguridad
-    paises_permitidos = ['Argentina', 'Chile', 'Uruguay']
-    df = df[df['Pais'].isin(paises_permitidos)]
+    # --- FILTRO DE PAÍS ---
+    df = df[df['Pais'].isin(['Argentina', 'Chile', 'Uruguay'])]
     
     # --- PROCESAMIENTO ---
     total_bt = df['Operaciones BT'].sum()
@@ -49,15 +47,29 @@ if archivo:
         UM_con_QR3=('Operaciones QR3.0', lambda x: (x > 0).sum())
     ).reset_index()
     
-    # Cálculo de salud de la migración por reseller
     resumen['% QR3'] = (resumen['UM_con_QR3'] / resumen['Cant_UM'] * 100).round(1)
     
-    # Mostrar tabla con formato
     st.dataframe(resumen.sort_values(by='% QR3', ascending=False), use_container_width=True)
 
-    # --- RECOMENDACIÓN ---
     st.divider()
-    st.caption(f"Filtro activo: Mostrando datos de {', '.join(paises_permitidos)}.")
+
+    # --- NUEVAS TABLAS: TOP 10 ---
+    col_left, col_right = st.columns(2)
+
+    with col_left:
+        st.subheader("🔝 Top 10: Clientes con más UM")
+        # Ordenamos por cantidad de máquinas de mayor a menor
+        top_10_volumen = resumen.nlargest(10, 'Cant_UM')[['Reseller', 'Cant_UM', '% QR3']]
+        st.table(top_10_volumen)
+
+    with col_right:
+        st.subheader("✅ Top 10: Tarea Cumplida (100% QR)")
+        # Filtramos los que llegaron al 100% y ordenamos por las máquinas que tienen
+        tarea_cumplida = resumen[resumen['% QR3'] == 100].nlargest(10, 'Cant_UM')[['Reseller', 'Cant_UM', 'Suma_QR3']]
+        if not tarea_cumplida.empty:
+            st.table(tarea_cumplida)
+        else:
+            st.write("Aún no hay clientes con el 100% de la tarea realizada.")
 
 else:
     st.info("👈 Por favor, seleccioná la fecha y subí tu archivo en el panel de la izquierda.")
