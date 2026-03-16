@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import io
 
 st.set_page_config(page_title="Migración QR 3.0", layout="wide")
 
@@ -36,7 +37,7 @@ if archivo:
         
         df.columns = df.columns.str.strip() 
 
-        # --- LIMPIEZA DE NÚMEROS (Quitar comas de los miles) ---
+        # --- LIMPIEZA DE NÚMEROS ---
         for col in ['Operaciones BT', 'Operaciones QR3.0']:
             if df[col].dtype == 'object':
                 df[col] = df[col].str.replace(',', '', regex=False).fillna(0).astype(float)
@@ -74,7 +75,8 @@ if archivo:
         resumen['% QR3'] = (resumen['UM_con_QR3'] / resumen['Cant_UM'] * 100).round(1)
         resumen['UM_Pendientes'] = resumen['Cant_UM'] - resumen['UM_con_QR3']
         
-        st.dataframe(resumen.sort_values(by='% QR3', ascending=False), use_container_width=True)
+        df_mostrar = resumen.sort_values(by='% QR3', ascending=False)
+        st.dataframe(df_mostrar, use_container_width=True)
 
         st.divider()
 
@@ -90,7 +92,24 @@ if archivo:
             criticos_reales = resumen.sort_values(by='UM_Pendientes', ascending=False).head(10)
             st.table(criticos_reales[['Reseller', 'Cant_UM', 'UM_Pendientes', '% QR3']])
             
+        # --- BOTÓN DE DESCARGA EXCEL ---
+        st.divider()
+        
+        # Crear el archivo Excel en memoria
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_mostrar.to_sheet(writer, index=False, sheet_name='Resumen_General')
+            top_10_volumen.to_sheet(writer, index=False, sheet_name='Top_Volumen')
+            criticos_reales.to_sheet(writer, index=False, sheet_name='Top_Criticos')
+        
+        st.download_button(
+            label="📥 Descargar Informe en Excel",
+            data=output.getvalue(),
+            file_name=f"Informe_Migracion_QR_{fecha_carga.strftime('%Y%m%d')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+            
     except Exception as e:
         st.error(f"Error técnico: {e}")
 else:
-    st.info("👈 Hacé clic en 'Obtener datos', descarga el archivo y subilo acá.")
+    st.info("👈 Hacé clic en 'Obtener datos', descarga el archivo (CSV o XLS) y subilo acá.")
