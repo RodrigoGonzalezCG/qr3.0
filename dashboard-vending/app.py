@@ -58,16 +58,16 @@ if archivo:
 
     with col_left:
         st.subheader("🔝 Top 10: Clientes con más UM")
-        # Ordenamos por cantidad de máquinas de mayor a menor
-        top_10_volumen = resumen.nlargest(10, 'Cant_UM')[['Reseller', 'Cant_UM', '% QR3']]
-        st.table(top_10_volumen)
+        # Tomamos los 10 con más UM, pero los ordenamos por % QR3 de mayor a menor
+        top_10_volumen = resumen.nlargest(10, 'Cant_UM').sort_values(by='% QR3', ascending=False)
+        st.table(top_10_volumen[['Reseller', 'Cant_UM', '% QR3']])
 
     with col_right:
         st.subheader("✅ Top 10: Tarea Cumplida (100% QR)")
-        # Filtramos los que llegaron al 100% y ordenamos por las máquinas que tienen
-        tarea_cumplida = resumen[resumen['% QR3'] == 100].nlargest(10, 'Cant_UM')[['Reseller', 'Cant_UM', 'Suma_QR3']]
+        # Filtramos 100%, y ordenamos por Suma_QR3 de mayor a menor
+        tarea_cumplida = resumen[resumen['% QR3'] == 100].sort_values(by='Suma_QR3', ascending=False).head(10)
         if not tarea_cumplida.empty:
-            st.table(tarea_cumplida)
+            st.table(tarea_cumplida[['Reseller', 'Cant_UM', 'Suma_QR3']])
         else:
             st.write("Aún no hay clientes con el 100% de la tarea realizada.")
 
