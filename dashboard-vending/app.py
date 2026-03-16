@@ -33,18 +33,19 @@ if archivo:
         if archivo.name.endswith('.xlsx'):
             df = pd.read_excel(archivo)
         else:
+            # Detección automática de separador para CSV de Metabase
             df = pd.read_csv(archivo, sep=None, engine='python', encoding='utf-8')
         
         df.columns = df.columns.str.strip() 
 
-        # --- LIMPIEZA DE NÚMEROS ---
+        # --- LIMPIEZA DE NÚMEROS (Quitar comas de los miles) ---
         for col in ['Operaciones BT', 'Operaciones QR3.0']:
             if df[col].dtype == 'object':
                 df[col] = df[col].str.replace(',', '', regex=False).fillna(0).astype(float)
             else:
                 df[col] = df[col].fillna(0).astype(float)
         
-        # --- FILTRO DE PAÍS ---
+        # --- FILTRO DE PAÍS (Solo Arg, Chi, Uru) ---
         df = df[df['Pais'].isin(['Argentina', 'Chile', 'Uruguay'])]
         
         # --- PROCESAMIENTO ---
@@ -89,18 +90,19 @@ if archivo:
 
         with col_right:
             st.subheader("⚠️ Top 10: Clientes Críticos")
+            # Críticos basados en UM_Pendientes
             criticos_reales = resumen.sort_values(by='UM_Pendientes', ascending=False).head(10)
             st.table(criticos_reales[['Reseller', 'Cant_UM', 'UM_Pendientes', '% QR3']])
             
-        # --- BOTÓN DE DESCARGA EXCEL ---
+        # --- BOTÓN DE DESCARGA EXCEL (CORREGIDO) ---
         st.divider()
         
-        # Crear el archivo Excel en memoria
         output = io.BytesIO()
+        # Se corrigió el método a .to_excel()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df_mostrar.to_sheet(writer, index=False, sheet_name='Resumen_General')
-            top_10_volumen.to_sheet(writer, index=False, sheet_name='Top_Volumen')
-            criticos_reales.to_sheet(writer, index=False, sheet_name='Top_Criticos')
+            df_mostrar.to_excel(writer, index=False, sheet_name='Resumen_General')
+            top_10_volumen.to_excel(writer, index=False, sheet_name='Top_Volumen')
+            criticos_reales.to_excel(writer, index=False, sheet_name='Top_Criticos')
         
         st.download_button(
             label="📥 Descargar Informe en Excel",
@@ -112,4 +114,4 @@ if archivo:
     except Exception as e:
         st.error(f"Error técnico: {e}")
 else:
-    st.info("👈 Hacé clic en 'Obtener datos', descarga el archivo (CSV o XLS) y subilo acá.")
+    st.info("👈 Hacé clic en 'Obtener datos', descarga el archivo y subilo acá.")
