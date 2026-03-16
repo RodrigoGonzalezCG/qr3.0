@@ -8,7 +8,7 @@ st.set_page_config(page_title="Migración QR 3.0", layout="wide")
 st.markdown("""
     <style>
     [data-testid="stMetric"] {
-        background-color: #31333F; /* Gris oscuro para resaltar */
+        background-color: #31333F;
         padding: 15px;
         border-radius: 12px;
         border: 1px solid #464855;
@@ -39,7 +39,7 @@ if archivo:
     ums_con_qr = df[df['Operaciones QR3.0'] > 0]['SerialUM'].nunique()
     porcentaje_migrado = (ums_con_qr / total_ums) * 100 if total_ums > 0 else 0
 
-    # --- MÉTRICAS PRINCIPALES CON FONDO ---
+    # --- MÉTRICAS PRINCIPALES ---
     col1, col2, col3, col4, col5 = st.columns(5)
     
     col1.metric("Ops BT Acumuladas", f"{total_bt:,}")
@@ -64,7 +64,7 @@ if archivo:
 
     st.divider()
 
-    # --- NUEVAS TABLAS: TOP 10 ---
+    # --- SECCIÓN DE RANKINGS ---
     col_left, col_right = st.columns(2)
 
     with col_left:
@@ -73,12 +73,16 @@ if archivo:
         st.table(top_10_volumen[['Reseller', 'Cant_UM', '% QR3']])
 
     with col_right:
-        st.subheader("✅ Top 10: Tarea Cumplida (100% QR)")
-        tarea_cumplida = resumen[resumen['% QR3'] == 100].sort_values(by='Suma_QR3', ascending=False).head(10)
-        if not tarea_cumplida.empty:
-            st.table(tarea_cumplida[['Reseller', 'Cant_UM', 'Suma_QR3']])
+        st.subheader("⚠️ Top 10: Críticos (Mucho UM, Poco QR)")
+        # Ordenamos por Cant_UM (de mayor a menor) Y por % QR3 (de menor a mayor)
+        # Esto nos da los clientes GRANDES que están más ATRASADOS.
+        criticos = resumen.sort_values(by=['% QR3', 'Cant_UM'], ascending=[True, False]).head(10)
+        
+        if not criticos.empty:
+            # Mostramos Suma_BT para ver cuánta "tecnología vieja" siguen usando
+            st.table(criticos[['Reseller', 'Cant_UM', '% QR3', 'Suma_BT']])
         else:
-            st.write("Aún no hay clientes con el 100% de la tarea realizada.")
+            st.write("¡Increíble! No hay clientes críticos pendientes.")
 
 else:
     st.info("👈 Por favor, seleccioná la fecha y subí tu archivo en el panel de la izquierda.")
