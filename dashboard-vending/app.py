@@ -49,7 +49,7 @@ if archivo:
     ).reset_index()
     
     # Cálculo de salud de la migración por reseller
-    resumen['% QR'] = (resumen['UM_con_QR'] / resumen['Cant_UM'] * 100).round(1)
+    resumen['% QR'] = (resumen['UM_con_QR3'] / resumen['Cant_UM'] * 100).round(1)
     
     # Mostrar tabla con formato
     st.dataframe(resumen.sort_values(by='% QR', ascending=False), use_container_width=True)
