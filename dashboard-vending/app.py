@@ -44,8 +44,8 @@ if archivo:
     resumen = df.groupby(['Pais', 'Reseller']).agg(
         Cant_UM=('SerialUM', 'nunique'),
         Suma_BT=('Operaciones BT', 'sum'),
-        Suma_QR3.0=('Operaciones QR3.0', 'sum'),
-        UM_con_QR3.0=('Operaciones QR3.0', lambda x: (x > 0).sum())
+        Suma_QR3=('Operaciones QR3.0', 'sum'),
+        UM_con_QR3=('Operaciones QR3.0', lambda x: (x > 0).sum())
     ).reset_index()
     
     # Cálculo de salud de la migración por reseller
