@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Migración QR 3.0", layout="wide")
 
-st.title("Monitor de Migración: BT a QR 3.0")
+st.title("📊 Monitor de Migración: BT a QR 3.0")
 
 # --- ENTRADA DE DATOS ---
 with st.sidebar:
@@ -13,13 +13,14 @@ with st.sidebar:
     archivo = st.file_uploader("Subí el reporte acumulado (XLS o CSV)", type=['xlsx', 'csv'])
 
 if archivo:
-    # Leer datos
+    # 1. Leer datos
     df = pd.read_excel(archivo) if archivo.name.endswith('.xlsx') else pd.read_csv(archivo)
     df.columns = df.columns.str.strip() # Limpiar nombres de columnas
     
-    # Simular que los datos de hoy son los que cargamos
-    # Para la comparativa, como el archivo es acumulativo al 100%, 
-    # calcularemos la diferencia contra el objetivo o una carga previa.
+    # 2. FILTRO DE PAÍSES (Excluimos Ecuador)
+    # Usamos una lista blanca para mayor seguridad
+    paises_permitidos = ['Argentina', 'Chile', 'Uruguay']
+    df = df[df['Pais'].isin(paises_permitidos)]
     
     # --- PROCESAMIENTO ---
     total_bt = df['Operaciones BT'].sum()
@@ -56,6 +57,7 @@ if archivo:
 
     # --- RECOMENDACIÓN ---
     st.divider()
+    st.caption(f"Filtro activo: Mostrando datos de {', '.join(paises_permitidos)}.")
 
 else:
     st.info("👈 Por favor, seleccioná la fecha y subí tu archivo en el panel de la izquierda.")
