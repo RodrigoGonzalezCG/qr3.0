@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Migración QR 3.0", layout="wide")
 
-st.title("📊 Monitor de Migración: BT a QR 3.0")
+st.title("Monitor de Migración: BT a QR 3.0")
 
 # --- ENTRADA DE DATOS ---
 with st.sidebar:
@@ -35,7 +35,7 @@ if archivo:
     
     col1.metric("Ops BT Acumuladas", f"{total_bt:,}")
     col2.metric("Ops QR 3.0 Acumuladas", f"{total_qr:,}")
-    col3.metric("UMs con QR Activo", f"{ums_con_qr:,}")
+    col3.metric("UMs con QR3.0", f"{ums_con_qr:,}")
     col4.metric("% Migración UMs", f"{porcentaje_migrado:.1f}%")
 
     # --- ANÁLISIS POR RESELLER ---
@@ -44,8 +44,8 @@ if archivo:
     resumen = df.groupby(['Pais', 'Reseller']).agg(
         Cant_UM=('SerialUM', 'nunique'),
         Suma_BT=('Operaciones BT', 'sum'),
-        Suma_QR=('Operaciones QR3.0', 'sum'),
-        UM_con_QR=('Operaciones QR3.0', lambda x: (x > 0).sum())
+        Suma_QR3.0=('Operaciones QR3.0', 'sum'),
+        UM_con_QR3.0=('Operaciones QR3.0', lambda x: (x > 0).sum())
     ).reset_index()
     
     # Cálculo de salud de la migración por reseller
@@ -56,8 +56,6 @@ if archivo:
 
     # --- RECOMENDACIÓN ---
     st.divider()
-    st.info(f"💡 Tip: Como tu archivo es acumulativo desde el 01/02, mañana al subir el nuevo reporte, "
-            f"verás el crecimiento total de operaciones directamente en los paneles superiores.")
 
 else:
     st.info("👈 Por favor, seleccioná la fecha y subí tu archivo en el panel de la izquierda.")
