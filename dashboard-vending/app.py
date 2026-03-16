@@ -4,6 +4,18 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Migración QR 3.0", layout="wide")
 
+# --- ESTILO CSS PARA LAS TARJETAS ---
+st.markdown("""
+    <style>
+    [data-testid="stMetric"] {
+        background-color: #31333F; /* Gris oscuro para resaltar */
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid #464855;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 st.title("Monitor de Migración: BT a QR 3.0")
 
 # --- ENTRADA DE DATOS ---
@@ -15,7 +27,7 @@ with st.sidebar:
 if archivo:
     # Leer datos
     df = pd.read_excel(archivo) if archivo.name.endswith('.xlsx') else pd.read_csv(archivo)
-    df.columns = df.columns.str.strip() # Limpiar nombres de columnas
+    df.columns = df.columns.str.strip() 
     
     # --- FILTRO DE PAÍS ---
     df = df[df['Pais'].isin(['Argentina', 'Chile', 'Uruguay'])]
@@ -23,18 +35,16 @@ if archivo:
     # --- PROCESAMIENTO ---
     total_bt = df['Operaciones BT'].sum()
     total_qr = df['Operaciones QR3.0'].sum()
-    total_ums = df['SerialUM'].nunique() # <--- Este es tu nuevo KPI
+    total_ums = df['SerialUM'].nunique()
     ums_con_qr = df[df['Operaciones QR3.0'] > 0]['SerialUM'].nunique()
-    
-    # Porcentaje de migración
     porcentaje_migrado = (ums_con_qr / total_ums) * 100 if total_ums > 0 else 0
 
-    # --- MÉTRICAS PRINCIPALES (Ahora en 5 columnas) ---
+    # --- MÉTRICAS PRINCIPALES CON FONDO ---
     col1, col2, col3, col4, col5 = st.columns(5)
     
     col1.metric("Ops BT Acumuladas", f"{total_bt:,}")
     col2.metric("Ops QR 3.0 Acumuladas", f"{total_qr:,}")
-    col3.metric("Cant. UM Totales", f"{total_ums:,}") # <--- Agregado aquí
+    col3.metric("Cant. UM Totales", f"{total_ums:,}")
     col4.metric("UMs con QR3.0", f"{ums_con_qr:,}")
     col5.metric("% Migración UMs", f"{porcentaje_migrado:.1f}%")
 
