@@ -1,57 +1,63 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Migración QR 3.0", layout="wide")
 
-# Título y cuenta regresiva al 31 de marzo
-st.title("🚀 Control Global: Monitor Migración QR 3.0")
-deadline = datetime(2026, 3, 31)
-dias_restantes = (deadline - datetime.now()).days
-st.warning(f"⏳ Faltan {dias_restantes} días para el apagón de la tecnología BT.")
+st.title("📊 Monitor de Migración: BT a QR 3.0")
 
-# Subida de archivo
-file = st.file_uploader("Subí tu archivo acumulativo (Excel o CSV)", type=['xlsx', 'csv'])
+# --- ENTRADA DE DATOS ---
+with st.sidebar:
+    st.header("Configuración")
+    fecha_carga = st.date_input("¿A qué fecha corresponde este reporte?", datetime.now())
+    archivo = st.file_uploader("Subí el reporte acumulado (XLS o CSV)", type=['xlsx', 'csv'])
 
-if file:
-    # Cargar datos
-    df = pd.read_excel(file) if file.name.endswith('.xlsx') else pd.read_csv(file)
-    df['Fecha'] = pd.to_datetime(df['Fecha'])
+if archivo:
+    # Leer datos
+    df = pd.read_excel(archivo) if archivo.name.endswith('.xlsx') else pd.read_csv(archivo)
+    df.columns = df.columns.str.strip() # Limpiar nombres de columnas
     
-    # Obtener las dos últimas fechas para comparar
-    fechas = sorted(df['Fecha'].unique(), reverse=True)
-    hoy = fechas[0]
-    ayer = fechas[1] if len(fechas) > 1 else hoy
-
-    # Filtrar data
-    df_hoy = df[df['Fecha'] == hoy]
-    df_ayer = df[df['Fecha'] == ayer]
-
-    # --- KPIs PRINCIPALES ---
-    c1, c2, c3 = st.columns(3)
+    # Simular que los datos de hoy son los que cargamos
+    # Para la comparativa, como el archivo es acumulativo al 100%, 
+    # calcularemos la diferencia contra el objetivo o una carga previa.
     
-    # Ops BT (Queremos que baje)
-    bt_hoy = df_hoy['Cantidad de operaciones BT'].sum()
-    bt_ayer = df_ayer['Cantidad de operaciones BT'].sum()
-    c1.metric("Ops BT Totales", f"{bt_hoy:,}", delta=int(bt_hoy - bt_ayer), delta_color="inverse")
-
-    # Ops QR (Queremos que suba)
-    qr_hoy = df_hoy['cantidad de operaciones QR3.0'].sum()
-    qr_ayer = df_ayer['cantidad de operaciones QR3.0'].sum()
-    c2.metric("Ops QR 3.0 Totales", f"{qr_hoy:,}", delta=int(qr_hoy - qr_ayer))
-
-    # UMs Migradas (Cualquiera que tenga al menos 1 op QR)
-    ums_qr = df_hoy[df_hoy['cantidad de operaciones QR3.0'] > 0]['Serial UM'].nunique()
-    c3.metric("UMs con QR Activo", ums_qr)
-
-    # --- TABLA DE RESELLERS ---
-    st.subheader(f"Estado por Reseller al {hoy.strftime('%d/%m/%Y')}")
+    # --- PROCESAMIENTO ---
+    total_bt = df['Operaciones BT'].sum()
+    total_qr = df['Operaciones QR3.0'].sum()
+    total_ums = df['SerialUM'].nunique()
+    ums_con_qr = df[df['Operaciones QR3.0'] > 0]['SerialUM'].nunique()
     
-    resumen = df_hoy.groupby(['Pais', 'Reseller']).agg(
-        Cant_UM=('Serial UM', 'nunique'),
-        Total_BT=('Cantidad de operaciones BT', 'sum'),
-        Total_QR=('cantidad de operaciones QR3.0', 'sum'),
-        UMs_con_QR=('cantidad de operaciones QR3.0', lambda x: (x > 0).sum())
+    # Porcentaje de migración
+    porcentaje_migrado = (ums_con_qr / total_ums) * 100 if total_ums > 0 else 0
+
+    # --- MÉTRICAS PRINCIPALES ---
+    col1, col2, col3, col4 = st.columns(4)
+    
+    col1.metric("Ops BT Acumuladas", f"{total_bt:,}")
+    col2.metric("Ops QR 3.0 Acumuladas", f"{total_qr:,}")
+    col3.metric("UMs con QR Activo", f"{ums_con_qr:,}")
+    col4.metric("% Migración UMs", f"{porcentaje_migrado:.1f}%")
+
+    # --- ANÁLISIS POR RESELLER ---
+    st.subheader(f"Estado de Clientes al {fecha_carga.strftime('%d/%m/%Y')}")
+    
+    resumen = df.groupby(['Pais', 'Reseller']).agg(
+        Cant_UM=('SerialUM', 'nunique'),
+        Suma_BT=('Operaciones BT', 'sum'),
+        Suma_QR=('Operaciones QR3.0', 'sum'),
+        UM_con_QR=('Operaciones QR3.0', lambda x: (x > 0).sum())
     ).reset_index()
+    
+    # Cálculo de salud de la migración por reseller
+    resumen['% QR'] = (resumen['UM_con_QR'] / resumen['Cant_UM'] * 100).round(1)
+    
+    # Mostrar tabla con formato
+    st.dataframe(resumen.sort_values(by='% QR', ascending=False), use_container_width=True)
 
-    st.dataframe(resumen, use_container_width=True)
+    # --- RECOMENDACIÓN ---
+    st.divider()
+    st.info(f"💡 Tip: Como tu archivo es acumulativo desde el 01/02, mañana al subir el nuevo reporte, "
+            f"verás el crecimiento total de operaciones directamente en los paneles superiores.")
+
+else:
+    st.info("👈 Por favor, seleccioná la fecha y subí tu archivo en el panel de la izquierda.")
