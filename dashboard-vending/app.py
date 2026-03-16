@@ -23,19 +23,20 @@ if archivo:
     # --- PROCESAMIENTO ---
     total_bt = df['Operaciones BT'].sum()
     total_qr = df['Operaciones QR3.0'].sum()
-    total_ums = df['SerialUM'].nunique()
+    total_ums = df['SerialUM'].nunique() # <--- Este es tu nuevo KPI
     ums_con_qr = df[df['Operaciones QR3.0'] > 0]['SerialUM'].nunique()
     
     # Porcentaje de migración
     porcentaje_migrado = (ums_con_qr / total_ums) * 100 if total_ums > 0 else 0
 
-    # --- MÉTRICAS PRINCIPALES ---
-    col1, col2, col3, col4 = st.columns(4)
+    # --- MÉTRICAS PRINCIPALES (Ahora en 5 columnas) ---
+    col1, col2, col3, col4, col5 = st.columns(5)
     
     col1.metric("Ops BT Acumuladas", f"{total_bt:,}")
     col2.metric("Ops QR 3.0 Acumuladas", f"{total_qr:,}")
-    col3.metric("UMs con QR3.0", f"{ums_con_qr:,}")
-    col4.metric("% Migración UMs", f"{porcentaje_migrado:.1f}%")
+    col3.metric("Cant. UM Totales", f"{total_ums:,}") # <--- Agregado aquí
+    col4.metric("UMs con QR3.0", f"{ums_con_qr:,}")
+    col5.metric("% Migración UMs", f"{porcentaje_migrado:.1f}%")
 
     # --- ANÁLISIS POR RESELLER ---
     st.subheader(f"Estado de Clientes al {fecha_carga.strftime('%d/%m/%Y')}")
@@ -58,13 +59,11 @@ if archivo:
 
     with col_left:
         st.subheader("🔝 Top 10: Clientes con más UM")
-        # Tomamos los 10 con más UM, pero los ordenamos por % QR3 de mayor a menor
-        top_10_volumen = resumen.nlargest(10, 'Cant_UM').sort_values(by='% QR3', ascending=False)
+        top_10_volumen = resumen.sort_values(by='Cant_UM', ascending=False).head(10)
         st.table(top_10_volumen[['Reseller', 'Cant_UM', '% QR3']])
 
     with col_right:
         st.subheader("✅ Top 10: Tarea Cumplida (100% QR)")
-        # Filtramos 100%, y ordenamos por Suma_QR3 de mayor a menor
         tarea_cumplida = resumen[resumen['% QR3'] == 100].sort_values(by='Suma_QR3', ascending=False).head(10)
         if not tarea_cumplida.empty:
             st.table(tarea_cumplida[['Reseller', 'Cant_UM', 'Suma_QR3']])
