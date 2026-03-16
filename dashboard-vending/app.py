@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Migración QR 3.0", layout="wide")
 
-st.title("📊 Monitor de Migración: BT a QR 3.0")
+st.title("Monitor de Migración: BT a QR 3.0")
 
 # --- ENTRADA DE DATOS ---
 with st.sidebar:
