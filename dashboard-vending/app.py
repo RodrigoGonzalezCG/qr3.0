@@ -73,7 +73,7 @@ if archivo:
         st.table(top_10_volumen[['Reseller', 'Cant_UM', '% QR3']])
 
     with col_right:
-        st.subheader("⚠️ Top 10: Críticos Reales (Más UM sin migrar)")
+        st.subheader("⚠️ Top 10: Clientes en estado Critico")
         # ORDENAMOS POR 'UM_Pendientes' de mayor a menor.
         # Esto traerá a BA Vending arriba de todo porque es el que más trabajo tiene pendiente.
         criticos_reales = resumen.sort_values(by='UM_Pendientes', ascending=False).head(10)
